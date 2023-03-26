@@ -10,13 +10,14 @@
 <body>
   <script>
     const { reactive } = Vue
-    console.log(reactive)
 
     const obj = reactive({
       name: '张三'
     })
 
-    console.log(obj)
+    console.log(obj.name)
+
+    obj.name = '李四'
   </script>
 </body>
 </html>
