@@ -1,20 +1,32 @@
 var Vue = (function (exports) {
     'use strict';
 
-    /**
-     * 收集依赖
-     * @param target
-     * @param key
-     */
-    function track(target, key) {
-        console.log('track: 收集依赖');
+    var targetMap = new WeakMap();
+    function effect(fn) {
+        var _effect = new ReactiveEffect(fn);
+        _effect.run();
     }
-    /**
-     * 触发依赖
-     * @param target
-     * @param key
-     * @param newValue
-     */
+    var activeEffect;
+    var ReactiveEffect = /** @class */ (function () {
+        function ReactiveEffect(fn) {
+            this.fn = fn;
+        }
+        ReactiveEffect.prototype.run = function () {
+            activeEffect = this;
+            return this.fn();
+        };
+        return ReactiveEffect;
+    }());
+    function track(target, key) {
+        if (!activeEffect)
+            return;
+        var depsMap = targetMap.get(target);
+        if (!depsMap) {
+            depsMap = new Map();
+            targetMap.set(target, depsMap);
+        }
+        depsMap.set(key, activeEffect);
+    }
     function trigger(target, key, newValue) {
         console.log('trigger: 触发依赖');
     }
@@ -23,7 +35,7 @@ var Vue = (function (exports) {
     function createGetter() {
         return function get(target, key, receiver) {
             var res = Reflect.get(target, key, receiver);
-            track();
+            track(target, key);
             return res;
         };
     }
@@ -54,6 +66,7 @@ var Vue = (function (exports) {
         return proxy;
     }
 
+    exports.effect = effect;
     exports.reactive = reactive;
 
     Object.defineProperty(exports, '__esModule', { value: true });
