@@ -11,21 +11,27 @@ export let activeEffect: ReactiveEffect | undefined
 
 export class ReactiveEffect<T = any> {
   constructor(public fn: () => T) {}
+
   run() {
     activeEffect = this
     return this.fn()
   }
 }
 
+/**
+ * 收集依赖
+ * @param target
+ * @param key
+ */
 export function track(target: object, key: unknown) {
   if (!activeEffect) return
   let depsMap = targetMap.get(target)
   if (!depsMap) {
-    depsMap = new Map()
-    targetMap.set(target, depsMap)
+    targetMap.set(target, (depsMap = new Map()))
   }
 
   depsMap.set(key, activeEffect)
+  console.log(targetMap)
 }
 
 export function trigger(target: object, key: unknown, newValue: unknown) {

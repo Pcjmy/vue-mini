@@ -17,15 +17,20 @@ var Vue = (function (exports) {
         };
         return ReactiveEffect;
     }());
+    /**
+     * 收集依赖
+     * @param target
+     * @param key
+     */
     function track(target, key) {
         if (!activeEffect)
             return;
         var depsMap = targetMap.get(target);
         if (!depsMap) {
-            depsMap = new Map();
-            targetMap.set(target, depsMap);
+            targetMap.set(target, (depsMap = new Map()));
         }
         depsMap.set(key, activeEffect);
+        console.log(targetMap);
     }
     function trigger(target, key, newValue) {
         console.log('trigger: 触发依赖');
