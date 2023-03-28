@@ -70,6 +70,9 @@ var Vue = (function (exports) {
     var isObject = function (val) {
         return val !== null && typeof val === 'object';
     };
+    var hasChanged = function (value, oldValue) {
+        return !Object.is(value, oldValue);
+    };
 
     var targetMap = new WeakMap();
     function effect(fn) {
@@ -208,6 +211,7 @@ var Vue = (function (exports) {
             this.__v_isShallow = __v_isShallow;
             this.dep = undefined;
             this.__v_isRef = true;
+            this._rawValue = value;
             this._value = __v_isShallow ? value : toReactive(value);
         }
         Object.defineProperty(RefImpl.prototype, "value", {
@@ -215,15 +219,32 @@ var Vue = (function (exports) {
                 trackRefValue(this);
                 return this._value;
             },
-            set: function (newVal) { },
+            set: function (newVal) {
+                if (hasChanged(newVal, this._rawValue)) {
+                    this._rawValue = newVal;
+                    this._value = toReactive(newVal);
+                    triggerRefValue(this);
+                }
+            },
             enumerable: false,
             configurable: true
         });
         return RefImpl;
     }());
+    /**
+     * 收集依赖
+     */
     function trackRefValue(ref) {
         if (activeEffect) {
             trackEffects(ref.dep || (ref.dep = createDep()));
+        }
+    }
+    /**
+     * 触发依赖
+     */
+    function triggerRefValue(ref) {
+        if (ref.dep) {
+            triggerEffects(ref.dep);
         }
     }
     /**
