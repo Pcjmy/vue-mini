@@ -1,4 +1,4 @@
-import { Dep, createDep } from './dep'
+import { createDep, Dep } from './dep'
 import { isArray } from '@vue/shared'
 
 type KeyToDepMap = Map<any, Dep>

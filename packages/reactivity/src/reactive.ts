@@ -1,4 +1,5 @@
 import { mutableHandlers } from './baseHandlers'
+import { isObject } from '@vue/shared'
 
 export const reactiveMap = new WeakMap<object, any>()
 
@@ -21,3 +22,6 @@ function createReactiveObject(
 
   return proxy
 }
+
+export const toReactive = <T extends unknown>(value: T): T =>
+  isObject(value) ? reactive(value as object) : value
