@@ -84,8 +84,10 @@ var Vue = (function (exports) {
     }
     var activeEffect;
     var ReactiveEffect = /** @class */ (function () {
-        function ReactiveEffect(fn) {
+        function ReactiveEffect(fn, scheduler) {
+            if (scheduler === void 0) { scheduler = null; }
             this.fn = fn;
+            this.scheduler = scheduler;
         }
         ReactiveEffect.prototype.run = function () {
             activeEffect = this;
@@ -159,7 +161,12 @@ var Vue = (function (exports) {
      * 触发指定依赖
      */
     function triggerEffect(effect) {
-        effect.run();
+        if (effect.scheduler) {
+            effect.scheduler();
+        }
+        else {
+            effect.run();
+        }
     }
 
     var get = createGetter();
@@ -259,15 +266,25 @@ var Vue = (function (exports) {
 
     var ComputedRefImpl = /** @class */ (function () {
         function ComputedRefImpl(getter) {
+            var _this = this;
             this.dep = undefined;
             this.__v_isRef = true;
-            this.effect = new ReactiveEffect(getter);
+            this._dirty = true;
+            this.effect = new ReactiveEffect(getter, function () {
+                if (!_this._dirty) {
+                    _this._dirty = true;
+                    triggerRefValue(_this);
+                }
+            });
             this.effect.computed = this;
         }
         Object.defineProperty(ComputedRefImpl.prototype, "value", {
             get: function () {
                 trackRefValue(this);
-                this._value = this.effect.run();
+                if (this._dirty) {
+                    this._dirty = false;
+                    this._value = this.effect.run();
+                }
                 return this._value;
             },
             enumerable: false,
