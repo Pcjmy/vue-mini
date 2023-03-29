@@ -73,6 +73,9 @@ var Vue = (function (exports) {
     var hasChanged = function (value, oldValue) {
         return !Object.is(value, oldValue);
     };
+    var isFunction = function (val) {
+        return typeof val === 'function';
+    };
 
     var targetMap = new WeakMap();
     function effect(fn) {
@@ -254,6 +257,35 @@ var Vue = (function (exports) {
         return !!(r && r.__v_isRef === true);
     }
 
+    var ComputedRefImpl = /** @class */ (function () {
+        function ComputedRefImpl(getter) {
+            this.dep = undefined;
+            this.__v_isRef = true;
+            this.effect = new ReactiveEffect(getter);
+            this.effect.computed = this;
+        }
+        Object.defineProperty(ComputedRefImpl.prototype, "value", {
+            get: function () {
+                trackRefValue(this);
+                this._value = this.effect.run();
+                return this._value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        return ComputedRefImpl;
+    }());
+    function computed(getterOrOptions) {
+        var getter;
+        var onlyGetter = isFunction(getterOrOptions);
+        if (onlyGetter) {
+            getter = getterOrOptions;
+        }
+        var cRef = new ComputedRefImpl(getter);
+        return cRef;
+    }
+
+    exports.computed = computed;
     exports.effect = effect;
     exports.reactive = reactive;
     exports.ref = ref;
